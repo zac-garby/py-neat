@@ -6,11 +6,18 @@ class Genome(object):
     def __init__(self):
         self.connections = {}
         self.nodes = {}
-        self.next_inno = 0
+        self.conn_innovation = 0
+        self.node_innovation = 0
+        self.perturb_prob = 0.9
     
-    def inno(self):
-        val = self.next_inno
-        self.next_inno += 1
+    def conn_inno(self):
+        val = self.conn_innovation
+        self.conn_innovation += 1
+        return val
+    
+    def node_inno(self):
+        val = self.node_innovation
+        self.node_innovation += 1
         return val
 
     def add_connection(self, conn):
@@ -46,7 +53,7 @@ class Genome(object):
             index_2,
             random() * 2.0 - 1.0,
             True,
-            self.inno(),
+            self.conn_inno(),
         ))
     
     def mutate_node(self):
@@ -56,13 +63,20 @@ class Genome(object):
 
         conn.expressed = False
 
-        new = Node(NodeType.hidden, len(self.nodes)+1)
-        in_to_new = Connection(inp.id, new.id, 1.0, True, self.inno())
-        new_to_out = Connection(new.id, out.id, conn.weight, True, self.inno())
+        new = Node(NodeType.hidden, self.node_inno())
+        in_to_new = Connection(inp.id, new.id, 1.0, True, self.conn_inno())
+        new_to_out = Connection(new.id, out.id, conn.weight, True, self.conn_inno())
 
         self.add_node(new)
         self.add_connection(in_to_new)
         self.add_connection(new_to_out)
+    
+    def mutate_weights(self):
+        for conn in self.connections.values():
+            if random() < self.perturb_prob:
+                conn.weight = conn.weight * (random() * 4.0 - 2.0)
+            else:
+                conn.weight = random() * 4.0 - 2.0
     
     def render(self, filename):
         dot = Digraph()
@@ -72,7 +86,7 @@ class Genome(object):
         
         for (i, conn) in self.connections.items():
             if conn.expressed:
-                dot.edge(str(conn.inp), str(conn.out), "%d, %d" % (conn.innovation, conn.weight))
+                dot.edge(str(conn.inp), str(conn.out), "{:.0f}, {:.2f}".format(conn.innovation, conn.weight))
         
         dot.render(filename, view=True)
     
