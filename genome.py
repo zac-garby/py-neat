@@ -110,3 +110,85 @@ class Genome(object):
                 child.add_connection(parent_conn.copy())
         
         return child
+
+    @staticmethod
+    def matching_genes(a, b):
+        return _matching_genes(a.nodes, b.nodes) + _matching_genes(a.connections, b.connections)
+    
+    @staticmethod
+    def disjoint_genes(a, b):
+        return _disjoint_genes(a.nodes, b.nodes) + _disjoint_genes(a.connections, b.connections)
+    
+    @staticmethod
+    def excess_genes(a, b):
+        return _excess_genes(a.nodes, b.nodes) + _disjoint_genes(a.connections, b.connections)
+    
+    @staticmethod
+    def max_gene_num(a, b):
+        nodes = max(len(a.nodes), len(b.nodes))
+        connections = max(len(a.connections), len(b.connections))
+        return nodes + connections
+    
+    @staticmethod
+    def avg_weight_diff(a, b):
+        matching_genes = 0
+        weight_diff = 0
+
+        max_a = max(a_dict.keys())
+        max_b = max(b_dict.keys())
+        indices = max(max_a, max_b)
+
+        for i in range(indices+1):
+            if i in a_dict and i in b_dict:
+                matching_genes += 1
+                weight_diff += abs(a_dict[i].weight - b_dict[i].weight)
+        
+        return weight_diff / matching_genes
+    
+    @staticmethod
+    def compatability_distance(a, b, c1, c2, c3):
+        N = Genome.max_gene_num(a, b)
+        E = Genome.excess_genes(a, b)
+        D = Genome.disjoint_genes(a, b)
+        W = Genome.avg_weight_diff(a, b)
+
+        return (c1 * E + c2 * D) / N + c3 * W
+
+def _matching_genes(a_dict, b_dict):
+    matching_genes = 0
+
+    max_a = max(a_dict.keys())
+    max_b = max(b_dict.keys())
+    indices = max(max_a, max_b)
+
+    for i in range(indices+1):
+        if i in a_dict and i in b_dict:
+            matching_genes += 1
+    
+    return matching_genes
+
+def _disjoint_genes(a_dict, b_dict):
+    disjoint_genes = 0
+
+    max_a = max(a_dict.keys())
+    max_b = max(b_dict.keys())
+    indices = max(max_a, max_b)
+
+    for i in range(indices+1):
+        if (i not in a_dict and i in b_dict and max_a > i) or (i in a_dict and i not in b_dict and max_b > i):
+            disjoint_genes += 1
+    
+    return disjoint_genes
+
+def _excess_genes(a_dict, b_dict):
+    excess_genes = 0
+
+    max_a = max(a_dict.keys())
+    max_b = max(b_dict.keys())
+    indices = max(max_a, max_b)
+
+    for i in range(indices+1):
+        if (i not in a_dict and i in b_dict and max_a < i) or (i in a_dict and i not in b_dict and max_b < i):
+            excess_genes += 1
+    
+    return excess_genes
